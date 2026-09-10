@@ -1,0 +1,24 @@
+name: Manual action test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync test descriptions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run local mc-readme-sync action
+        uses: ./
+        with:
+          modrinth-api-key: ${{ secrets.MODRINTH_API_KEY }}
+          curseforge-api-key: ${{ secrets.CURSEFORGE_API_KEY }}
+          modrinth-project-id: "LLfA8jAD"
+          curseforge-project-id: "1244695"
+          readme-path: "test-README.md"
