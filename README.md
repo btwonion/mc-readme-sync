@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: btwonion/mc-readme-sync@v1.0.0
+      - uses: btwonion/mc-readme-sync@v1
         with:
           modrinth-api-key: ${{ secrets.MODRINTH_API_KEY }}
           curseforge-api-key: ${{ secrets.CURSEFORGE_API_KEY }}
@@ -34,7 +34,7 @@ The Modrinth token needs the `PROJECT_WRITE` permission. The CurseForge token mu
 To sync only one service, omit both inputs belonging to the other service. For example, a Modrinth-only step is:
 
 ```yaml
-- uses: btwonion/mc-readme-sync@v1.0.0
+- uses: btwonion/mc-readme-sync@v1
   with:
     modrinth-api-key: ${{ secrets.MODRINTH_API_KEY }}
     modrinth-project-id: your-modrinth-slug-or-id
