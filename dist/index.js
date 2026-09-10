@@ -26,6 +26,10 @@ function workflowCommand(command, message) {
   process.stdout.write(`::${command}::${escaped}\n`);
 }
 
+function info(message) {
+  process.stdout.write(`${message}\n`);
+}
+
 function resolveReadmePath(workspace, inputPath) {
   const root = path.resolve(workspace);
   const file = path.resolve(root, inputPath);
@@ -122,6 +126,7 @@ async function updateModrinth({ apiKey, projectId, description, repository, fetc
 
 async function run({
   emitCommand = workflowCommand,
+  log = info,
   fetchImpl = fetch,
   readFile = fs.readFile,
 } = {}) {
@@ -195,7 +200,7 @@ async function run({
   updates.forEach((result, index) => {
     const { platform } = operations[index];
     if (result.status === 'fulfilled') {
-      emitCommand('notice', `${platform} description updated`);
+      log(`${platform} description updated`);
     } else {
       failures.push(`${platform}: ${result.reason.message}`);
     }

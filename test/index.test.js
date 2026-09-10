@@ -139,6 +139,7 @@ test('syncs only CurseForge when only CurseForge is configured', async () => {
     'curseforge-project-id': '12345',
   }, () => run({
     emitCommand: () => {},
+    log: () => {},
     readFile: async () => '# CurseForge only',
     fetchImpl: successfulFetch((url) => {
       requests += 1;
@@ -157,6 +158,7 @@ test('syncs only Modrinth when only Modrinth is configured', async () => {
     'modrinth-project-id': 'example-project',
   }, () => run({
     emitCommand: () => {},
+    log: () => {},
     readFile: async () => '# Modrinth only',
     fetchImpl: successfulFetch((url) => {
       requests += 1;
@@ -165,6 +167,29 @@ test('syncs only Modrinth when only Modrinth is configured', async () => {
   }));
 
   assert.equal(requests, 1);
+});
+
+test('logs successful updates without creating notice annotations', async () => {
+  const commands = [];
+  const messages = [];
+
+  await withInputs({
+    'modrinth-api-key': 'modrinth-secret',
+    'modrinth-project-id': 'example-project',
+    'curseforge-api-key': 'curse-secret',
+    'curseforge-project-id': '12345',
+  }, () => run({
+    emitCommand: (command, message) => commands.push([command, message]),
+    log: (message) => messages.push(message),
+    readFile: async () => '# Both services',
+    fetchImpl: successfulFetch(() => {}),
+  }));
+
+  assert.deepEqual(messages, [
+    'CurseForge description updated',
+    'Modrinth description updated',
+  ]);
+  assert.equal(commands.some(([command]) => command === 'notice'), false);
 });
 
 test('rejects a partial service configuration', () => {
