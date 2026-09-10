@@ -1,0 +1,29 @@
+name: mc-readme-sync
+description: Sync a repository Markdown file to CurseForge and Modrinth project descriptions.
+author: btwonion
+
+inputs:
+  modrinth-api-key:
+    description: Modrinth personal access token with PROJECT_WRITE permission.
+    required: true
+  curseforge-api-key:
+    description: CurseForge author API token.
+    required: true
+  modrinth-project-id:
+    description: Modrinth project slug or project ID.
+    required: true
+  curseforge-project-id:
+    description: Numeric CurseForge project ID.
+    required: true
+  readme-path:
+    description: Path to the Markdown file, relative to the repository root.
+    required: true
+    default: README.md
+
+runs:
+  using: node24
+  main: dist/index.js
+
+branding:
+  icon: refresh-cw
+  color: green
