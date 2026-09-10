@@ -53,7 +53,7 @@ async function withInputs(inputs, callback) {
   }
 }
 
-test('sends the Markdown body to the CurseForge author endpoint', async () => {
+test('sends the Markdown body as CurseForge multipart metadata', async () => {
   await updateCurseForge({
     apiKey: 'curse-secret',
     projectId: '12345',
@@ -62,7 +62,10 @@ test('sends the Markdown body to the CurseForge author endpoint', async () => {
       assert.equal(url, `${CURSEFORGE_API}/projects/12345/update-project`);
       assert.equal(options.method, 'POST');
       assert.equal(options.headers['X-Api-Token'], 'curse-secret');
-      assert.deepEqual(JSON.parse(options.body), {
+      assert.equal(options.headers['Content-Type'], undefined);
+      assert.ok(options.body instanceof FormData);
+      assert.deepEqual([...options.body.keys()], ['metadata']);
+      assert.deepEqual(JSON.parse(options.body.get('metadata')), {
         description: '# Hello',
         descriptionType: 'markdown',
       });

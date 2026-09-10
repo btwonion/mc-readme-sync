@@ -57,7 +57,7 @@ The file path is resolved inside `GITHUB_WORKSPACE`; paths outside the checked-o
 
 ## API calls
 
-- CurseForge: `POST https://minecraft.curseforge.com/api/projects/{projectId}/update-project` with an `X-Api-Token` header and `{ "description": "...", "descriptionType": "markdown" }`.
+- CurseForge: `POST https://minecraft.curseforge.com/api/projects/{projectId}/update-project` with an `X-Api-Token` header and a multipart `metadata` field containing `{ "description": "...", "descriptionType": "markdown" }`.
 - Modrinth: `PATCH https://api.modrinth.com/v2/project/{id|slug}` with an `Authorization` header and `{ "body": "..." }`.
 
 ## Development

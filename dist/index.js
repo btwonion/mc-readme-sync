@@ -72,18 +72,20 @@ async function updateCurseForge({ apiKey, projectId, description, fetchImpl = fe
     throw new Error('curseforge-project-id must be numeric');
   }
 
+  const form = new FormData();
+  form.append('metadata', JSON.stringify({
+    description,
+    descriptionType: 'markdown',
+  }));
+
   const response = await fetchImpl(
     `${CURSEFORGE_API}/projects/${encodeURIComponent(projectId)}/update-project`,
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'X-Api-Token': apiKey,
       },
-      body: JSON.stringify({
-        description,
-        descriptionType: 'markdown',
-      }),
+      body: form,
       signal: AbortSignal.timeout(30_000),
     },
   );
