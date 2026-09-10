@@ -118,7 +118,11 @@ async function updateModrinth({ apiKey, projectId, description, repository, fetc
   }
 }
 
-async function run({ fetchImpl = fetch, readFile = fs.readFile } = {}) {
+async function run({
+  emitCommand = workflowCommand,
+  fetchImpl = fetch,
+  readFile = fs.readFile,
+} = {}) {
   const modrinthApiKey = getInput('modrinth-api-key');
   const curseforgeApiKey = getInput('curseforge-api-key');
   const modrinthProjectId = getInput('modrinth-project-id');
@@ -141,10 +145,10 @@ async function run({ fetchImpl = fetch, readFile = fs.readFile } = {}) {
   }
 
   if (modrinthEnabled) {
-    workflowCommand('add-mask', modrinthApiKey);
+    emitCommand('add-mask', modrinthApiKey);
   }
   if (curseforgeEnabled) {
-    workflowCommand('add-mask', curseforgeApiKey);
+    emitCommand('add-mask', curseforgeApiKey);
   }
 
   const file = resolveReadmePath(workspace, readmePath);
@@ -189,7 +193,7 @@ async function run({ fetchImpl = fetch, readFile = fs.readFile } = {}) {
   updates.forEach((result, index) => {
     const { platform } = operations[index];
     if (result.status === 'fulfilled') {
-      workflowCommand('notice', `${platform} description updated`);
+      emitCommand('notice', `${platform} description updated`);
     } else {
       failures.push(`${platform}: ${result.reason.message}`);
     }

@@ -122,6 +122,7 @@ test('includes an API response body in an error', async () => {
 
 test('does nothing when neither service is configured', async () => {
   await withInputs({}, () => run({
+    emitCommand: () => {},
     readFile: () => assert.fail('README should not be read'),
     fetchImpl: () => assert.fail('fetch should not be called'),
   }));
@@ -134,6 +135,7 @@ test('syncs only CurseForge when only CurseForge is configured', async () => {
     'curseforge-api-key': 'curse-secret',
     'curseforge-project-id': '12345',
   }, () => run({
+    emitCommand: () => {},
     readFile: async () => '# CurseForge only',
     fetchImpl: successfulFetch((url) => {
       requests += 1;
@@ -151,6 +153,7 @@ test('syncs only Modrinth when only Modrinth is configured', async () => {
     'modrinth-api-key': 'modrinth-secret',
     'modrinth-project-id': 'example-project',
   }, () => run({
+    emitCommand: () => {},
     readFile: async () => '# Modrinth only',
     fetchImpl: successfulFetch((url) => {
       requests += 1;
