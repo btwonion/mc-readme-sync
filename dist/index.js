@@ -38,6 +38,22 @@ function resolveReadmePath(workspace, inputPath) {
   return file;
 }
 
+function isServiceConfigured(platform, apiKey, projectId) {
+  const prefix = platform.toLowerCase();
+  const apiKeyInput = `${prefix}-api-key`;
+  const projectIdInput = `${prefix}-project-id`;
+
+  if (apiKey && !projectId) {
+    throw new Error(`${projectIdInput} is required when ${apiKeyInput} is supplied`);
+  }
+
+  if (projectId && !apiKey) {
+    throw new Error(`${apiKeyInput} is required when ${projectIdInput} is supplied`);
+  }
+
+  return Boolean(apiKey && projectId);
+}
+
 async function responseError(platform, response) {
   let details = '';
 
@@ -102,46 +118,80 @@ async function updateModrinth({ apiKey, projectId, description, repository, fetc
   }
 }
 
-async function run() {
-  const modrinthApiKey = getInput('modrinth-api-key', { required: true });
-  const curseforgeApiKey = getInput('curseforge-api-key', { required: true });
-  const modrinthProjectId = getInput('modrinth-project-id', { required: true });
-  const curseforgeProjectId = getInput('curseforge-project-id', { required: true });
+async function run({ fetchImpl = fetch, readFile = fs.readFile } = {}) {
+  const modrinthApiKey = getInput('modrinth-api-key');
+  const curseforgeApiKey = getInput('curseforge-api-key');
+  const modrinthProjectId = getInput('modrinth-project-id');
+  const curseforgeProjectId = getInput('curseforge-project-id');
   const readmePath = getInput('readme-path') || 'README.md';
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const modrinthEnabled = isServiceConfigured(
+    'Modrinth',
+    modrinthApiKey,
+    modrinthProjectId,
+  );
+  const curseforgeEnabled = isServiceConfigured(
+    'CurseForge',
+    curseforgeApiKey,
+    curseforgeProjectId,
+  );
 
-  workflowCommand('add-mask', modrinthApiKey);
-  workflowCommand('add-mask', curseforgeApiKey);
+  if (!modrinthEnabled && !curseforgeEnabled) {
+    return;
+  }
+
+  if (modrinthEnabled) {
+    workflowCommand('add-mask', modrinthApiKey);
+  }
+  if (curseforgeEnabled) {
+    workflowCommand('add-mask', curseforgeApiKey);
+  }
 
   const file = resolveReadmePath(workspace, readmePath);
-  const description = await fs.readFile(file, 'utf8');
+  const description = await readFile(file, 'utf8');
 
   if (!description.trim()) {
     throw new Error(`${readmePath} is empty`);
   }
 
-  const updates = await Promise.allSettled([
-    updateCurseForge({
-      apiKey: curseforgeApiKey,
-      projectId: curseforgeProjectId,
-      description,
-    }),
-    updateModrinth({
-      apiKey: modrinthApiKey,
-      projectId: modrinthProjectId,
-      description,
-      repository: process.env.GITHUB_REPOSITORY,
-    }),
-  ]);
+  const operations = [];
 
-  const platforms = ['CurseForge', 'Modrinth'];
+  if (curseforgeEnabled) {
+    operations.push({
+      platform: 'CurseForge',
+      update: updateCurseForge({
+        apiKey: curseforgeApiKey,
+        projectId: curseforgeProjectId,
+        description,
+        fetchImpl,
+      }),
+    });
+  }
+
+  if (modrinthEnabled) {
+    operations.push({
+      platform: 'Modrinth',
+      update: updateModrinth({
+        apiKey: modrinthApiKey,
+        projectId: modrinthProjectId,
+        description,
+        repository: process.env.GITHUB_REPOSITORY,
+        fetchImpl,
+      }),
+    });
+  }
+
+  const updates = await Promise.allSettled(
+    operations.map(({ update }) => update),
+  );
   const failures = [];
 
   updates.forEach((result, index) => {
+    const { platform } = operations[index];
     if (result.status === 'fulfilled') {
-      workflowCommand('notice', `${platforms[index]} description updated`);
+      workflowCommand('notice', `${platform} description updated`);
     } else {
-      failures.push(`${platforms[index]}: ${result.reason.message}`);
+      failures.push(`${platform}: ${result.reason.message}`);
     }
   });
 
@@ -161,7 +211,9 @@ module.exports = {
   CURSEFORGE_API,
   MODRINTH_API,
   getInput,
+  isServiceConfigured,
   resolveReadmePath,
+  run,
   updateCurseForge,
   updateModrinth,
 };

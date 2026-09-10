@@ -6,7 +6,9 @@ const test = require('node:test');
 const {
   CURSEFORGE_API,
   MODRINTH_API,
+  isServiceConfigured,
   resolveReadmePath,
+  run,
   updateCurseForge,
   updateModrinth,
 } = require('../dist/index.js');
@@ -16,6 +18,39 @@ function successfulFetch(inspect) {
     inspect(url, options);
     return new Response(null, { status: 204 });
   };
+}
+
+async function withInputs(inputs, callback) {
+  const inputNames = [
+    'modrinth-api-key',
+    'curseforge-api-key',
+    'modrinth-project-id',
+    'curseforge-project-id',
+    'readme-path',
+  ];
+  const entries = inputNames.map((name) => [
+    `INPUT_${name.toUpperCase()}`,
+    process.env[`INPUT_${name.toUpperCase()}`],
+  ]);
+
+  for (const [key] of entries) {
+    delete process.env[key];
+  }
+  for (const [name, value] of Object.entries(inputs)) {
+    process.env[`INPUT_${name.toUpperCase()}`] = value;
+  }
+
+  try {
+    return await callback();
+  } finally {
+    for (const [key, value] of entries) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  }
 }
 
 test('sends the Markdown body to the CurseForge author endpoint', async () => {
@@ -82,5 +117,57 @@ test('includes an API response body in an error', async () => {
       ),
     }),
     /Modrinth returned HTTP 404.*not_found/,
+  );
+});
+
+test('does nothing when neither service is configured', async () => {
+  await withInputs({}, () => run({
+    readFile: () => assert.fail('README should not be read'),
+    fetchImpl: () => assert.fail('fetch should not be called'),
+  }));
+});
+
+test('syncs only CurseForge when only CurseForge is configured', async () => {
+  let requests = 0;
+
+  await withInputs({
+    'curseforge-api-key': 'curse-secret',
+    'curseforge-project-id': '12345',
+  }, () => run({
+    readFile: async () => '# CurseForge only',
+    fetchImpl: successfulFetch((url) => {
+      requests += 1;
+      assert.equal(url, `${CURSEFORGE_API}/projects/12345/update-project`);
+    }),
+  }));
+
+  assert.equal(requests, 1);
+});
+
+test('syncs only Modrinth when only Modrinth is configured', async () => {
+  let requests = 0;
+
+  await withInputs({
+    'modrinth-api-key': 'modrinth-secret',
+    'modrinth-project-id': 'example-project',
+  }, () => run({
+    readFile: async () => '# Modrinth only',
+    fetchImpl: successfulFetch((url) => {
+      requests += 1;
+      assert.equal(url, `${MODRINTH_API}/project/example-project`);
+    }),
+  }));
+
+  assert.equal(requests, 1);
+});
+
+test('rejects a partial service configuration', () => {
+  assert.throws(
+    () => isServiceConfigured('Modrinth', 'secret', ''),
+    /modrinth-project-id is required/,
+  );
+  assert.throws(
+    () => isServiceConfigured('CurseForge', '', '12345'),
+    /curseforge-api-key is required/,
   );
 });

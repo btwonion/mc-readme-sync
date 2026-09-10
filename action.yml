@@ -4,17 +4,17 @@ author: btwonion
 
 inputs:
   modrinth-api-key:
-    description: Modrinth personal access token with PROJECT_WRITE permission.
-    required: true
+    description: Modrinth personal access token with PROJECT_WRITE permission. Required when syncing Modrinth.
+    required: false
   curseforge-api-key:
-    description: CurseForge author API token.
-    required: true
+    description: CurseForge author API token. Required when syncing CurseForge.
+    required: false
   modrinth-project-id:
-    description: Modrinth project slug or project ID.
-    required: true
+    description: Modrinth project slug or project ID. Required when syncing Modrinth.
+    required: false
   curseforge-project-id:
-    description: Numeric CurseForge project ID.
-    required: true
+    description: Numeric CurseForge project ID. Required when syncing CurseForge.
+    required: false
   readme-path:
     description: Path to the Markdown file, relative to the repository root.
     required: true
