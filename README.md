@@ -72,4 +72,4 @@ No install or build step is needed because the action only uses Node.js built-in
 
 ## License
 
-[MIT](LICENSE)
+[GNU General Public License v3.0](LICENSE)
